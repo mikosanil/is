@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern İş Emri Formu</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #FFC107;
+            --success-color: #4CAF50;
+            --danger-color: #F44336;
+            --text-color: #333;
+            --light-gray: #f5f5f5;
+            --border-radius: 8px;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: var(--light-gray);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--light-gray);
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+
+        .section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .basic-info {
+            grid-column: span 4;
+        }
+
+        .work-details {
+            grid-column: span 8;
+        }
+
+        .timeline {
+            grid-column: span 6;
+        }
+
+        .costs {
+            grid-column: span 6;
+        }
+
+        .documents {
+            grid-column: span 12;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.7rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .status-new { background: #E3F2FD; color: var(--primary-color); }
+        .status-progress { background: #FFF3E0; color: var(--secondary-color); }
+        .status-completed { background: #E8F5E9; color: var(--success-color); }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--light-gray);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-left: 2px solid var(--light-gray);
+            padding-left: 1rem;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+        }
+
+        .cost-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .cost-table th,
+        .cost-table td {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .file-upload {
+            border: 2px dashed #ddd;
+            padding: 2rem;
+            text-align: center;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary-color);
+        }
+
+        .signature-section {
+            grid-column: span 12;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .signature-box {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .signature-line {
+            width: 100%;
+            height: 1px;
+            background: #ddd;
+            margin: 1rem 0;
+        }
+
+        .button-group {
+            grid-column: span 12;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1976D2;
+            box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+            
+            body {
+                padding: 0;
+                background: white;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .grid-container {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            
+            .basic-info,
+            .work-details,
+            .timeline,
+            .costs {
+                grid-column: span 6;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .basic-info,
+            .work-details,
+            .timeline,
+            .costs {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="printArea">
+        <div class="header">
+            <h1>İş Emri Formu</h1>
+            <div class="status-badge status-new">Yeni İş Emri #2024001</div>
+        </div>
+
+        <div class="grid-container">
+            <!-- Temel Bilgiler -->
+            <div class="basic-info section">
+                <div class="section-header">
+                    <span>Temel Bilgiler</span>
+                </div>
+                <div class="form-group">
+                    <label>Döküman No</label>
+                    <input type="text" class="form-control" placeholder="DOC-2024-001" required>
+                </div>
+                <div class="form-group">
+                    <label>Talep Eden Departman</label>
+                    <input type="text" class="form-control" placeholder="Üretim" required>
+                </div>
+                <div class="form-group">
+                    <label>Öncelik</label>
+                    <select class="form-control" required>
+                        <option value="">Seçiniz...</option>
+                        <option>Düşük</option>
+                        <option>Orta</option>
+                        <option>Yüksek</option>
+                        <option>Acil</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tahmini Süre (Gün)</label>
+                    <input type="number" class="form-control" placeholder="5" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>İlerleme Durumu</label>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 30%"></div>
+                    </div>
+                    <input type="range" class="form-control" min="0" max="100" value="30" onchange="updateProgress(this.value)">
+                </div>
+            </div>
+
+            <!-- İş Detayları -->
+            <div class="work-details section">
+                <div class="section-header">
+                    <span>İş Detayları</span>
+                </div>
+                <table class="cost-table">
+                    <thead>
+                        <tr>
+                            <th>İş Emri No</th>
+                            <th>Açıklama</th>
+                            <th>Görevli</th>
+                            <th>Başlangıç</th>
+                            <th>Bitiş</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workOrderTable">
+                        <tr>
+                            <td>WO-001</td>
+                            <td>
+                                <input type="text" class="form-control" value="İş emri formu kodlama">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" value="Mikail">
+                            </td>
+                            <td>
+                                <input type="date" class="form-control">
+                            </td>
+                            <td>
+                                <input type="date" class="form-control">
+                            </td>
+                            <td>
+                                <select class="form-control">
+                                    <option>Yeni</option>
+                                    <option>Devam Ediyor</option>
+                                    <option>Tamamlandı</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-primary" type="button" style="margin-top: 1rem;" onclick="addWorkOrderRow()">
+                    + Yeni İş Emri
+                </button>
+            </div>
+
+            <!-- Zaman Çizelgesi -->
+            <div class="timeline section">
+                <div class="section-header">
+                    <span>Zaman Çizelgesi</span>
+                </div>
+                <div id="timelineContainer">
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <div class="form-group">
+                                <input type="datetime-local" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Durum açıklaması">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" type="button" onclick="addTimelineItem()">
+                    + Yeni Durum
+                </button>
+            </div>
+
+            <!-- Maliyet -->
+            <div class="costs section">
+                <div class="section-header">
+                    <span>Maliyet Bilgileri</span>
+                </div>
+                <table class="cost-table">
+                    <thead>
+                        <tr>
+                            <th>Kalem</th>
+                            <th>Miktar</th>
+                            <th>Birim Fiyat</th>
+                            <th>Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody id="costTableBody">
+                        <tr>
+                            <td>
+                                <input type="text" class="form-control" placeholder="Maliyet kalemi">
+                            </td>
+                            <td>
+                                <input type="number" class="form-control" oninput="calculateTotal()" placeholder="0" min="0">
+                            </td>
+                            <td>
+                                <input type="number" class="form-control" onchange="calculateTotal()" placeholder="0.00" min="0">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" readonly>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-primary" type="button" style="margin-top: 1rem;" onclick="addCostItem()">
+                    + Yeni Maliyet Kalemi
+                </button>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>Toplam Maliyet</label>
+                    <input type="text" id="totalCost" class="form-control" readonly>
+                </div>
+            </div>
+
+            <!-- İmzalar ve Kaydet Butonları -->
+            <div class="signature-section">
+                <div class="signature-box">
+                    <label>Yetkili İmza</label>
+                    <div class="signature-line"></div>
+                </div>
+                <div class="signature-box">
+                    <label>Onaylayan İmza</label>
+                    <div class="signature-line"></div>
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary no-print" type="button" onclick="downloadPDF()">
+                    PDF Olarak Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.jsPDF = window.jspdf.jsPDF;
+
+        function addWorkOrderRow() {
+            const table = document.getElementById('workOrderTable');
+            const newRow = table.insertRow();
+            newRow.innerHTML = generateWorkOrderRowHTML();
+        }
+
+        function generateWorkOrderRowHTML() {
+            return `
+                <td>Yeni WO</td>
+                <td><input type="text" class="form-control" value=""></td>
+                <td><input type="text" class="form-control" value=""></td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+                <td>
+                    <select class="form-control">
+                        <option>Yeni</option>
+                        <option>Devam Ediyor</option>
+                        <option>Tamamlandı</option>
+                    </select>
+                </td>
+            `;
+        }
+
+        function addTimelineItem() {
+            const timelineContainer = document.getElementById('timelineContainer');
+            const newItem = document.createElement('div');
+            newItem.classList.add('timeline-item');
+            newItem.innerHTML = generateTimelineItemHTML();
+            timelineContainer.appendChild(newItem);
+        }
+
+        function generateTimelineItemHTML() {
+            return `
+                <div class="timeline-content">
+                    <div class="form-group">
+                        <input type="datetime-local" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Durum açıklaması">
+                    </div>
+                </div>
+            `;
+        }
+
+        function calculateTotal() {
+            const tableBody = document.getElementById('costTableBody');
+            let total = 0;
+            for (let i = 0; i < tableBody.rows.length; i++) {
+                const quantity = parseFloat(tableBody.rows[i].cells[1].querySelector('input').value) || 0;
+                const unitPrice = parseFloat(tableBody.rows[i].cells[2].querySelector('input').value) || 0;
+                const rowTotal = quantity * unitPrice;
+                tableBody.rows[i].cells[3].querySelector('input').value = rowTotal.toFixed(2);
+                total += rowTotal;
+            }
+            document.getElementById('totalCost').value = total.toFixed(2);
+        }
+
+        const debounce = (func, delay) => {
+            let timer;
+            return function() {
+                clearTimeout(timer);
+                timer = setTimeout(() => func.apply(this, arguments), delay);
+            };
+        };
+
+        document.querySelectorAll('.form-control[onchange="calculateTotal()"]').forEach(input => {
+            input.addEventListener('input', debounce(calculateTotal, 300));
+        });
+
+        function downloadPDF() {
+            const printArea = document.getElementById('printArea');
+            const loadingMessage = document.createElement('div');
+            loadingMessage.innerText = 'PDF oluşturuluyor, lütfen bekleyiniz...';
+            loadingMessage.classList.add('loading-message');
+            document.body.appendChild(loadingMessage);
+            
+            html2canvas(printArea, { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save("is-emri-formu.pdf");
+
+                document.body.removeChild(loadingMessage);
+            }).catch((error) => {
+                console.error("PDF oluşturulurken hata oluştu: ", error);
+                alert("PDF oluşturulurken bir hata meydana geldi. Lütfen tekrar deneyin.");
+                document.body.removeChild(loadingMessage);
+            });
+        }
+
+        function updateProgress(value) {
+            document.querySelector('.progress-fill').style.width = value + '%';
+        }
+    </script>
+</body>
+</html>
