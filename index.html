@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern İş Emri Formu</title>
+    <title data-i18n="title">Modern İş Emri Formu</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -216,6 +216,12 @@
             border-color: var(--primary-color);
         }
 
+        .file-list {
+            list-style: none;
+            margin-top: 0.5rem;
+            padding-left: 0;
+        }
+
         .signature-section {
             grid-column: span 12;
             display: grid;
@@ -266,6 +272,29 @@
             box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
         }
 
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            width: 300px;
+        }
+
+        .language-select {
+            text-align: right;
+            margin-bottom: 1rem;
+        }
+
         @media print {
             .no-print {
                 display: none;
@@ -309,9 +338,23 @@
     </style>
 </head>
 <body>
-    <div class="container" id="printArea">
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-box">
+            <h2 data-i18n="loginTitle">Giriş Yap</h2>
+            <input id="username" class="form-control" placeholder="Kullanıcı Adı">
+            <input id="password" type="password" class="form-control" placeholder="Parola" style="margin-top:0.5rem;">
+            <button class="btn btn-primary" onclick="login()" style="margin-top:1rem;" data-i18n="loginButton">Giriş</button>
+        </div>
+    </div>
+    <div class="language-select no-print">
+        <select id="languageSelector" onchange="setLanguage(this.value)">
+            <option value="tr">Türkçe</option>
+            <option value="en">English</option>
+        </select>
+    </div>
+    <div class="container" id="printArea" style="display:none;">
         <div class="header">
-            <h1>İş Emri Formu</h1>
+            <h1 data-i18n="title">İş Emri Formu</h1>
             <div class="status-badge status-new">Yeni İş Emri #2024001</div>
         </div>
 
@@ -319,7 +362,7 @@
             <!-- Temel Bilgiler -->
             <div class="basic-info section">
                 <div class="section-header">
-                    <span>Temel Bilgiler</span>
+                    <span data-i18n="basicInfo">Temel Bilgiler</span>
                 </div>
                 <div class="form-group">
                     <label>Döküman No</label>
@@ -355,7 +398,7 @@
             <!-- İş Detayları -->
             <div class="work-details section">
                 <div class="section-header">
-                    <span>İş Detayları</span>
+                    <span data-i18n="workDetails">İş Detayları</span>
                 </div>
                 <table class="cost-table">
                     <thead>
@@ -401,7 +444,7 @@
             <!-- Zaman Çizelgesi -->
             <div class="timeline section">
                 <div class="section-header">
-                    <span>Zaman Çizelgesi</span>
+                    <span data-i18n="timeline">Zaman Çizelgesi</span>
                 </div>
                 <div id="timelineContainer">
                     <div class="timeline-item">
@@ -423,7 +466,7 @@
             <!-- Maliyet -->
             <div class="costs section">
                 <div class="section-header">
-                    <span>Maliyet Bilgileri</span>
+                    <span data-i18n="costInfo">Maliyet Bilgileri</span>
                 </div>
                 <table class="cost-table">
                     <thead>
@@ -460,6 +503,23 @@
                 </div>
             </div>
 
+            <!-- Dosya Ekleri -->
+            <div class="documents section">
+                <div class="section-header">
+                    <span data-i18n="attachments">Dosya Ekleri</span>
+                </div>
+                <input type="file" id="fileInput" multiple class="form-control">
+                <ul id="fileList" class="file-list"></ul>
+            </div>
+
+            <!-- Raporlar -->
+            <div class="reports section no-print">
+                <div class="section-header">
+                    <span data-i18n="reports">Raporlar</span>
+                </div>
+                <div id="reportContent"></div>
+            </div>
+
             <!-- İmzalar ve Kaydet Butonları -->
             <div class="signature-section">
                 <div class="signature-box">
@@ -472,7 +532,10 @@
                 </div>
             </div>
             <div class="button-group">
-                <button class="btn btn-primary no-print" type="button" onclick="downloadPDF()">
+                <button class="btn btn-primary no-print" type="button" onclick="saveWorkOrder()" data-i18n="save">
+                    Kaydet
+                </button>
+                <button class="btn btn-primary no-print" type="button" onclick="downloadPDF()" data-i18n="savePdf">
                     PDF Olarak Kaydet
                 </button>
             </div>
@@ -480,7 +543,66 @@
     </div>
 
     <script>
-        window.jsPDF = window.jspdf.jsPDF;
+        if (window.jspdf && window.jspdf.jsPDF) {
+            window.jsPDF = window.jspdf.jsPDF;
+        }
+
+        let currentLang = localStorage.getItem('language') || 'tr';
+
+        const translations = {
+            tr: {
+                loginTitle: 'Giriş Yap',
+                loginButton: 'Giriş',
+                save: 'Kaydet',
+                savePdf: 'PDF Olarak Kaydet',
+                title: 'İş Emri Formu',
+                basicInfo: 'Temel Bilgiler',
+                workDetails: 'İş Detayları',
+                timeline: 'Zaman Çizelgesi',
+                costInfo: 'Maliyet Bilgileri',
+                attachments: 'Dosya Ekleri',
+                reports: 'Raporlar'
+            },
+            en: {
+                loginTitle: 'Login',
+                loginButton: 'Login',
+                save: 'Save',
+                savePdf: 'Save as PDF',
+                title: 'Work Order Form',
+                basicInfo: 'Basic Information',
+                workDetails: 'Work Details',
+                timeline: 'Timeline',
+                costInfo: 'Cost Information',
+                attachments: 'Attachments',
+                reports: 'Reports'
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('language', lang);
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+        }
+
+        function login() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const storedUser = localStorage.getItem('username') || 'admin';
+            const storedPass = localStorage.getItem('password') || 'password';
+            if (user === storedUser && pass === storedPass) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('printArea').style.display = 'block';
+                setLanguage(currentLang);
+                loadSavedWorkOrders();
+            } else {
+                alert('Hatalı giriş');
+            }
+        }
 
         function addWorkOrderRow() {
             const table = document.getElementById('workOrderTable');
@@ -502,6 +624,17 @@
                         <option>Tamamlandı</option>
                     </select>
                 </td>
+            `;
+        }
+
+        function addCostItem() {
+            const tableBody = document.getElementById('costTableBody');
+            const newRow = tableBody.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" class="form-control" placeholder="Maliyet kalemi"></td>
+                <td><input type="number" class="form-control" oninput="calculateTotal()" placeholder="0" min="0"></td>
+                <td><input type="number" class="form-control" onchange="calculateTotal()" placeholder="0.00" min="0"></td>
+                <td><input type="text" class="form-control" readonly></td>
             `;
         }
 
@@ -547,9 +680,63 @@
             };
         };
 
-        document.querySelectorAll('.form-control[onchange="calculateTotal()"]').forEach(input => {
-            input.addEventListener('input', debounce(calculateTotal, 300));
-        });
+        document.querySelectorAll('.form-control[onchange="calculateTotal()"]')
+            .forEach(input => {
+                input.addEventListener('input', debounce(calculateTotal, 300));
+            });
+
+        const attachedFiles = [];
+        document.getElementById('fileInput').addEventListener('change', handleFiles);
+
+        function handleFiles(e) {
+            const list = document.getElementById('fileList');
+            list.innerHTML = '';
+            attachedFiles.length = 0;
+            Array.from(e.target.files).forEach(file => {
+                attachedFiles.push(file.name);
+                const li = document.createElement('li');
+                li.textContent = file.name;
+                list.appendChild(li);
+            });
+        }
+
+        function validateForm() {
+            const requiredFields = document.querySelectorAll('#printArea [required]');
+            for (let field of requiredFields) {
+                if (!field.value) {
+                    alert('Lütfen tüm zorunlu alanları doldurun.');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function saveWorkOrder() {
+            if (!validateForm()) return;
+            const data = {
+                docNo: document.querySelector('#printArea input[placeholder="DOC-2024-001"]').value,
+                department: document.querySelector('#printArea input[placeholder="Üretim"]').value,
+                priority: document.querySelector('#printArea select').value,
+                duration: document.querySelector('#printArea input[type="number"]').value,
+                progress: document.querySelector('#printArea input[type="range"]').value,
+                totalCost: document.getElementById('totalCost').value,
+                files: [...attachedFiles]
+            };
+            const arr = JSON.parse(localStorage.getItem('workOrders') || '[]');
+            arr.push(data);
+            localStorage.setItem('workOrders', JSON.stringify(arr));
+            alert('Kaydedildi');
+            loadSavedWorkOrders();
+        }
+
+        function loadSavedWorkOrders() {
+            const arr = JSON.parse(localStorage.getItem('workOrders') || '[]');
+            const report = document.getElementById('reportContent');
+            if (!report) return;
+            report.innerHTML = 'Kaydedilmiş İş Emri Sayısı: ' + arr.length + '<br>';
+            const total = arr.reduce((sum, w) => sum + (parseFloat(w.totalCost) || 0), 0);
+            report.innerHTML += 'Toplam Maliyet: ' + total.toFixed(2);
+        }
 
         function downloadPDF() {
             const printArea = document.getElementById('printArea');
@@ -579,6 +766,9 @@
         function updateProgress(value) {
             document.querySelector('.progress-fill').style.width = value + '%';
         }
+
+        // initialize language on load
+        setLanguage(currentLang);
     </script>
 </body>
 </html>
